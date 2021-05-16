@@ -1,4 +1,6 @@
+import string
 import nltk
+nltk.download('punkt')
 import sys
 
 TERMINALS = """
@@ -15,7 +17,9 @@ V -> "smiled" | "tell" | "were"
 """
 
 NONTERMINALS = """
-S -> N V
+S -> NP VP | NP Conj NP VP | NP VP Conj VP | NP VP P NP | S Conj S
+NP -> N | Adj NP | Det NP
+VP -> V | VP Adv | Adv VP | VP P
 """
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
@@ -62,7 +66,11 @@ def preprocess(sentence):
     and removing any word that does not contain at least one alphabetic
     character.
     """
-    raise NotImplementedError
+    tokens = nltk.word_tokenize(sentence.translate(str.maketrans('', '', string.punctuation)))
+    for token in tokens:
+        if not token.isalpha() or len(token) < 1:
+            tokens.remove(token)
+    return tokens
 
 
 def np_chunk(tree):
@@ -72,7 +80,7 @@ def np_chunk(tree):
     whose label is "NP" that does not itself contain any other
     noun phrases as subtrees.
     """
-    raise NotImplementedError
+    return []
 
 
 if __name__ == "__main__":
