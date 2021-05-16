@@ -1,5 +1,7 @@
 import string
+
 import nltk
+
 nltk.download('punkt')
 import sys
 
@@ -17,8 +19,8 @@ V -> "smiled" | "tell" | "were"
 """
 
 NONTERMINALS = """
-S -> NP VP | NP Conj NP VP | NP VP Conj VP | NP VP P NP | S Conj S
-NP -> N | Adj NP | Det NP
+S -> NP VP | NP Conj NP VP | NP VP Conj VP | NP VP P NP | NP VP NP | S Conj S
+NP -> N | Adj NP | Det NP | NP P NP
 VP -> V | VP Adv | Adv VP | VP P
 """
 
@@ -27,7 +29,6 @@ parser = nltk.ChartParser(grammar)
 
 
 def main():
-
     # If filename specified, read sentence from file
     if len(sys.argv) == 2:
         with open(sys.argv[1]) as f:
@@ -66,7 +67,7 @@ def preprocess(sentence):
     and removing any word that does not contain at least one alphabetic
     character.
     """
-    tokens = nltk.word_tokenize(sentence.translate(str.maketrans('', '', string.punctuation)))
+    tokens = nltk.word_tokenize(sentence.lower().translate(str.maketrans('', '', string.punctuation)))
     for token in tokens:
         if not token.isalpha() or len(token) < 1:
             tokens.remove(token)
@@ -80,7 +81,21 @@ def np_chunk(tree):
     whose label is "NP" that does not itself contain any other
     noun phrases as subtrees.
     """
-    return []
+    np_chunks = []
+    path = []
+    traverse(tree, np_chunks)
+    return np_chunks
+
+
+def traverse(tree, np_chunks):
+    if tree.label() == "NP" and len(list(tree.subtrees(filter=lambda t: t.label() == "NP"))) == 1:
+        if tree not in np_chunks:
+            np_chunks.append(tree)
+    else:
+        for subtree in tree.subtrees(filter=lambda t: t.label() == "NP"):
+            if subtree == tree:
+                continue
+            traverse(subtree, np_chunks)
 
 
 if __name__ == "__main__":
